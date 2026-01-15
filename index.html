@@ -180,8 +180,16 @@ function imageLoaded(){
     imagesLoaded++;
     if(imagesLoaded === totalImages){
         // All images loaded → start game
-        createPlatforms();
-        update();
+        let imagesLoaded = 0;
+const totalImages = 4; // player, platform, broken, jetpack
+
+function imageLoaded(){
+    imagesLoaded++;
+    if(imagesLoaded === totalImages){
+        // All images loaded → start game
+        
+imageLoaded;
+
     }
 }
 
