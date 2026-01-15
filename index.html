@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Auto Jump Power Game</title>
+  <title>Doodle Jump Clone</title>
   <style>
     body { margin:0; background:#87CEEB; overflow:hidden; }
     canvas { display:block; margin:0 auto; background:#87CEEB; }
@@ -17,36 +17,56 @@ let gameStarted = false;
 let gameOver = false;
 let score = 0;
 
-// Player
-const player = { x: 200, y: 500, w: 30, h: 30, dy: 0, onGround: false };
+// Load images
+const playerImg = new Image();
+playerImg.src = 'images/player.png';
+
+const platformImg = new Image();
+platformImg.src = 'images/platform.png';
+
+const brokenImg = new Image();
+brokenImg.src = 'images/broken.png';
+
+const jetpackImg = new Image();
+jetpackImg.src = 'images/jetpack.png';
+
+// Player starts **above the first platform**
+const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false };
 
 // Platforms
 let platforms = [];
 const platformCount = 8;
 
-// Initialize platforms with one under the player
 function createPlatforms() {
-  for(let i = 0; i < platformCount; i++){
-    let p = {
-      x: Math.random() * (canvas.width - 70),
-      y: 500 - i*75,
+  // First platform directly under player
+  platforms.push({
+    x: player.x - 35,  // center under player
+    y: player.y + player.h + 10, // slightly below player
+    w: 70,
+    h: 15,
+    broken: false
+  });
+
+  // Rest of the platforms
+  for(let i = 1; i < platformCount; i++){
+    platforms.push({
+      x: Math.random()*(canvas.width-70),
+      y: player.y + player.h + 10 - i*75,  // spacing above the first platform
       w: 70,
       h: 15,
       broken: false
-    };
-    platforms.push(p);
+    });
   }
 }
 
 function spawnPlatform(y){
-  let p = {
-    x: Math.random() * (canvas.width - 70),
+  platforms.push({
+    x: Math.random()*(canvas.width-70),
     y: y,
-    w: 70,
-    h: 15,
-    broken: false
-  };
-  platforms.push(p);
+    w:70,
+    h:15,
+    broken:false
+  });
 }
 
 // Game loop
@@ -54,7 +74,7 @@ function update(){
   if(!gameStarted) return drawStartScreen();
   if(gameOver) return drawGameOver();
 
-  // Auto jump mechanics
+  // Auto jump
   const jumpStrength = 15;
   if(player.onGround) player.dy = -jumpStrength;
 
@@ -71,14 +91,14 @@ function update(){
       player.y = p.y - player.h;
       player.onGround = true;
 
-      // Chance to break platform
-      if(!p.broken && Math.random() < 0.2){
+      // Chance to break
+      if(!p.broken && Math.random()<0.2){
         p.broken = true;
       }
     }
   }
 
-  // Scroll screen and spawn new platforms
+  // Scroll screen
   if(player.y < 200){
     let dy = 200 - player.y;
     player.y = 200;
@@ -88,7 +108,7 @@ function update(){
     // Remove offscreen platforms
     platforms = platforms.filter(p => p.y < canvas.height);
 
-    // Spawn new platform at top
+    // Spawn new platforms to maintain count
     while(platforms.length < platformCount){
       spawnPlatform(-Math.random()*100);
     }
@@ -106,33 +126,17 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   // Platforms
-  for(let p of platforms){
-    ctx.fillStyle = p.broken ? '#8B0000' : '#228B22';
-    ctx.fillRect(p.x, p.y, p.w, p.h);
-    if(p.broken){
-      // cracks
-      ctx.strokeStyle='black';
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x+p.w, p.y+p.h);
-      ctx.moveTo(p.x+p.w, p.y);
-      ctx.lineTo(p.x, p.y+p.h);
-      ctx.stroke();
-    }
-  }
+  platforms.forEach(p=>{
+    if(p.broken) ctx.drawImage(brokenImg, p.x, p.y, p.w, p.h);
+    else ctx.drawImage(platformImg, p.x, p.y, p.w, p.h);
+  });
 
   // Player
-  ctx.fillStyle='orange';
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  // Jetpack effect if in air
+  // Jetpack effect
   if(!player.onGround){
-    ctx.fillStyle='yellow';
-    ctx.beginPath();
-    ctx.moveTo(player.x+player.w/2-5, player.y+player.h);
-    ctx.lineTo(player.x+player.w/2+5, player.y+player.h);
-    ctx.lineTo(player.x+player.w/2, player.y+player.h+15);
-    ctx.fill();
+    ctx.drawImage(jetpackImg, player.x+player.w/4, player.y+player.h, player.w/2, 15);
   }
 
   // Score
@@ -147,7 +151,7 @@ function drawStartScreen(){
   ctx.fillStyle='black';
   ctx.font='40px Arial';
   ctx.textAlign='center';
-  ctx.fillText('Auto Jump Game', canvas.width/2, 200);
+  ctx.fillText('Auto Jump Doodle', canvas.width/2, 200);
   ctx.font='20px Arial';
   ctx.fillText('Press Enter to Start', canvas.width/2, 300);
   requestAnimationFrame(update);
