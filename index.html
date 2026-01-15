@@ -87,11 +87,12 @@ function drawDoodle(x, y, w, h){
   ctx.arc(x + w*0.7, y + h*0.32, 4, 0, Math.PI*2);
   ctx.fill();
 
-  // Mouth
+  // Doodle-style mouth (small horizontal line)
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(x + w/2, y + h*0.6, 8, 0, Math.PI);
+  ctx.moveTo(x + w*0.35, y + h*0.6);
+  ctx.lineTo(x + w*0.65, y + h*0.6);
   ctx.stroke();
 
   // Feet
