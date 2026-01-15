@@ -27,6 +27,7 @@ const platformCount = 8;
 
 const keys = { left:false, right:false, jet:false };
 
+// --- Create platforms ---
 function createPlatforms() {
   platforms.push({
     x: player.x - 35,
@@ -51,7 +52,7 @@ function spawnPlatform(y){
   };
   platforms.push(p);
 
-  // 🔥 10% chance to spawn jetpack
+  // 10% chance to spawn jetpack
   if(Math.random() < 0.1){
     jetpacks.push({
       x: p.x + p.w/2 - 12,
@@ -61,6 +62,39 @@ function spawnPlatform(y){
       active: true
     });
   }
+}
+
+// --- Doodle character ---
+function drawDoodle(x, y, w, h){
+  // Body
+  ctx.fillStyle = '#7CFC00';
+  ctx.fillRect(x, y, w, h);
+
+  // Eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(x + w*0.3, y + h*0.3, 6, 0, Math.PI*2);
+  ctx.arc(x + w*0.7, y + h*0.3, 6, 0, Math.PI*2);
+  ctx.fill();
+
+  // Pupils
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(x + w*0.3, y + h*0.3, 3, 0, Math.PI*2);
+  ctx.arc(x + w*0.7, y + h*0.3, 3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Mouth
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + h*0.6, 6, 0, Math.PI);
+  ctx.stroke();
+
+  // Feet
+  ctx.fillStyle = '#228B22';
+  ctx.fillRect(x + 5, y + h - 5, 8, 5);
+  ctx.fillRect(x + w - 13, y + h - 5, 8, 5);
 }
 
 // --- Game loop ---
@@ -101,14 +135,14 @@ function update(){
     }
   }
 
-  // 🚀 Jetpack pickup = HUGE BOOST
+  // Jetpack pickup = huge boost
   jetpacks.forEach(j => {
     if(!j.active) return;
     if(player.x < j.x + j.w &&
        player.x + player.w > j.x &&
        player.y < j.y + j.h &&
        player.y + player.h > j.y){
-      player.dy = -35;     // ≈1000px boost via scrolling
+      player.dy = -35;
       j.active = false;
     }
   });
@@ -152,8 +186,17 @@ function draw(){
     ctx.fillRect(j.x, j.y, j.w, j.h);
   });
 
-  ctx.fillStyle = 'orange';
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  drawDoodle(player.x, player.y, player.w, player.h);
+
+  // Jet flame when moving upward
+  if(player.dy < 0){
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.moveTo(player.x + player.w/2 - 5, player.y + player.h);
+    ctx.lineTo(player.x + player.w/2 + 5, player.y + player.h);
+    ctx.lineTo(player.x + player.w/2, player.y + player.h + 15);
+    ctx.fill();
+  }
 
   ctx.fillStyle='black';
   ctx.font='20px Arial';
