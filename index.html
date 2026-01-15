@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Doodle Jump Clone</title>
+  <title>Doodle Jump Clone with Jetpack</title>
   <style>
     body { margin:0; background:#87CEEB; overflow:hidden; }
     canvas { display:block; margin:0 auto; background:#87CEEB; }
@@ -16,16 +16,18 @@ const ctx = canvas.getContext('2d');
 let gameStarted = false;
 let gameOver = false;
 let score = 0;
+let powerJumps = 10; // Starting power jumps
+let blocksPassed = 0;
 
 // Player starts above first platform
-const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false };
+const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false, usingJetpack:false };
 
 // Platforms
 let platforms = [];
 const platformCount = 8;
 
 // Key tracking for movement
-const keys = { left:false, right:false };
+const keys = { left:false, right:false, jet:false };
 
 function createPlatforms() {
   platforms.push({
@@ -63,9 +65,17 @@ function update(){
 
   const jumpStrength = 15;
   const playerSpeed = 5;
+  const jetStrength = 18; // power jump boost
+
+  // Jetpack activation
+  if(keys.jet && powerJumps > 0 && !player.usingJetpack){
+    player.dy = -jetStrength;
+    powerJumps--;
+    player.usingJetpack = true;
+  }
 
   // Auto jump
-  if(player.onGround) player.dy = -jumpStrength;
+  if(player.onGround && !player.usingJetpack) player.dy = -jumpStrength;
 
   // Gravity
   player.dy += 0.8;
@@ -87,6 +97,7 @@ function update(){
       player.dy = 0;
       player.y = p.y - player.h;
       player.onGround = true;
+      player.usingJetpack = false;
 
       if(!p.broken && Math.random()<0.2){
         p.broken = true;
@@ -100,6 +111,13 @@ function update(){
     player.y = 200;
     platforms.forEach(p => p.y += dy);
     score += Math.floor(dy);
+
+    // Track blocks passed for power jump bonus
+    blocksPassed += dy;
+    if(Math.floor(blocksPassed/75) >= 5){ // Every 5 blocks
+      powerJumps += 2;
+      blocksPassed = 0;
+    }
 
     platforms = platforms.filter(p => p.y < canvas.height);
 
@@ -126,6 +144,7 @@ function draw(){
   ctx.fillStyle = 'orange';
   ctx.fillRect(player.x, player.y, player.w, player.h);
 
+  // Jetpack flame
   if(!player.onGround){
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
@@ -135,9 +154,11 @@ function draw(){
     ctx.fill();
   }
 
+  // Draw score and power jumps
   ctx.fillStyle='black';
   ctx.font='20px Arial';
   ctx.fillText('Score: '+score, 10,30);
+  ctx.fillText('Power Jumps: '+powerJumps, 10,60);
 }
 
 // --- Start screen ---
@@ -149,10 +170,12 @@ function drawStartScreen(){
   ctx.fillStyle='white';
   ctx.font='40px Arial';
   ctx.textAlign='center';
-  ctx.fillText('Auto Jump Doodle', canvas.width/2, 200);
+  ctx.fillText('Doodle Jump Jetpack', canvas.width/2, 200);
 
   ctx.font='20px Arial';
   ctx.fillText('Press Enter to Start', canvas.width/2, 300);
+  ctx.fillText('Arrow Keys or A/D to Move', canvas.width/2, 330);
+  ctx.fillText('Space to Jet Boost', canvas.width/2, 360);
 
   requestAnimationFrame(update);
 }
@@ -166,7 +189,8 @@ function drawGameOver(){
   ctx.fillText('Game Over', canvas.width/2, 250);
   ctx.font='20px Arial';
   ctx.fillText('Score: '+score, canvas.width/2, 300);
-  ctx.fillText('Refresh to Play Again', canvas.width/2, 350);
+  ctx.fillText('Power Jumps Left: '+powerJumps, canvas.width/2, 330);
+  ctx.fillText('Refresh to Play Again', canvas.width/2, 360);
 }
 
 // --- Input ---
@@ -174,11 +198,13 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Enter') gameStarted = true;
   if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
   if(e.key==='ArrowRight' || e.key==='d') keys.right = true;
+  if(e.key===' ') keys.jet = true;
 });
 
 document.addEventListener('keyup', e=>{
   if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
   if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
+  if(e.key===' ') keys.jet = false;
 });
 
 createPlatforms();
