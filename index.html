@@ -4,7 +4,7 @@
   <title>Doodle Jump Clone with Jetpack</title>
   <style>
     body { margin:0; overflow:hidden; }
-    canvas { display:block; margin:0 auto; background:#87CEEB; }
+    canvas { display:block; margin:0 auto; background:white; }
   </style>
 </head>
 <body>
@@ -16,53 +16,29 @@ const ctx = canvas.getContext('2d');
 let gameStarted = false;
 let gameOver = false;
 let score = 0;
-let powerJumps = 10;
+let powerJumps = 5; // limited jetpack boosts
 let blocksPassed = 0;
 
-const player = { x:200, y:500, w:50, h:50, dy:0, onGround:false, usingJetpack:false };
+const player = { x:200, y:500, w:50, h:50, dy:0, onGround:false };
 let platforms = [];
 let jetpacks = [];
 const platformCount = 8;
 const keys = { left:false, right:false, jet:false };
 
-// --- Background ---
-const clouds = [];
-for(let i=0;i<8;i++){
-  clouds.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height/2, w:60, h:30});
-}
-
-// --- Platform creation ---
+// --- Platforms ---
 function createPlatforms() {
-  platforms.push({ x: player.x - 35, y: player.y + player.h + 10, w: 70, h: 15, broken: false });
+  platforms.push({ x: player.x - 35, y: player.y + player.h + 10, w: 70, h: 15 });
   for(let i = 1; i < platformCount; i++){
     spawnPlatform(player.y + player.h + 10 - i*75);
   }
 }
 
 function spawnPlatform(y){
-  const p = { x: Math.random()*(canvas.width-70), y: y, w:70, h:15, broken:false };
+  const p = { x: Math.random()*(canvas.width-70), y: y, w:70, h:15 };
   platforms.push(p);
   if(Math.random() < 0.1){
     jetpacks.push({ x: p.x + p.w/2 - 12, y: p.y - 30, w: 24, h: 30, active: true });
   }
-}
-
-// --- Draw background ---
-function drawBackground(){
-  // Sky gradient
-  const grad = ctx.createLinearGradient(0,0,0,canvas.height);
-  grad.addColorStop(0,'#87CEEB');
-  grad.addColorStop(1,'#b0e0e6');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // Clouds
-  ctx.fillStyle = 'white';
-  clouds.forEach(c=>{
-    ctx.beginPath();
-    ctx.ellipse(c.x, c.y, c.w, c.h, 0, 0, Math.PI*2);
-    ctx.fill();
-  });
 }
 
 // --- Draw player ---
@@ -100,25 +76,23 @@ function update(){
 
   const jumpStrength = 15;
   const playerSpeed = 5;
-  const jetStrength = 0.8; // continuous upward force
+  const megaJetBoost = 35;
 
-  // Continuous jetpack
+  if(player.onGround && !keys.jet) player.dy = -jumpStrength;
+
+  // Mega jetpack boost
   if(keys.jet && powerJumps > 0){
-    player.dy -= jetStrength;
-    powerJumps -= 0.2; // slower drain
-    if(powerJumps < 0) powerJumps = 0;
-    player.usingJetpack = true;
-  } else {
-    player.usingJetpack = false;
+    player.dy = -megaJetBoost;
+    powerJumps--;
+    keys.jet = false; // single boost per press
   }
-
-  if(player.onGround && !player.usingJetpack) player.dy = -jumpStrength;
 
   player.dy += 0.8; // gravity
   player.y += player.dy;
 
   if(keys.left) player.x -= playerSpeed;
   if(keys.right) player.x += playerSpeed;
+
   if(player.x + player.w < 0) player.x = canvas.width;
   if(player.x > canvas.width) player.x = -player.w;
 
@@ -132,14 +106,14 @@ function update(){
     }
   }
 
-  // Jetpack pickups
+  // Jetpack pickups refill boosts
   jetpacks.forEach(j=>{
     if(!j.active) return;
     if(player.x < j.x + j.w && player.x + player.w > j.x &&
        player.y < j.y + j.h && player.y + player.h > j.y){
       j.active = false;
-      powerJumps = 10; // refill
-      player.dy = -20; // initial boost
+      powerJumps = 5;
+      player.dy = -20; // small boost
     }
   });
 
@@ -163,7 +137,8 @@ function update(){
 
 // --- Draw everything ---
 function draw(){
-  drawBackground();
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
   platforms.forEach(p=>{
     ctx.fillStyle = '#228B22';
@@ -190,13 +165,13 @@ function draw(){
   ctx.fillStyle='black';
   ctx.font='20px Arial';
   ctx.fillText('Score: '+score, 10,30);
-  ctx.fillText('Jetpack: '+Math.floor(powerJumps), 10, 60);
+  ctx.fillText('Jetpack: '+powerJumps, 10, 60);
 }
 
 // --- Screens ---
 function drawStartScreen(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='white';
+  ctx.fillStyle='black';
   ctx.font='40px Arial';
   ctx.textAlign='center';
   ctx.fillText('Doodle Jump Jetpack', canvas.width/2, 250);
@@ -224,7 +199,6 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('keyup', e=>{
   if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
   if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
-  if(e.key===' ') keys.jet = false;
 });
 
 createPlatforms();
