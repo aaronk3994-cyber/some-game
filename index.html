@@ -30,28 +30,54 @@ brokenImg.src = 'images/broken.png';
 const jetpackImg = new Image();
 jetpackImg.src = 'images/jetpack.png';
 
-// Player starts **above the first platform**
+// Player starts above the first platform
 const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false };
 
 // Platforms
 let platforms = [];
 const platformCount = 8;
 
+// --- Image loading logic ---
+let imagesLoaded = 0;
+const totalImages = 4;
+
+function imageLoaded(){
+    imagesLoaded++;
+    if(imagesLoaded === totalImages){
+        // All images loaded → start the game
+        createPlatforms();
+        update();
+    }
+}
+
+// Attach load events
+playerImg.onload = imageLoaded;
+platformImg.onload = imageLoaded;
+brokenImg.onload = imageLoaded;
+jetpackImg.onload = imageLoaded;
+
+// Optional: show loading text while images load
+ctx.fillStyle = "black";
+ctx.font = "30px Arial";
+ctx.textAlign = "center";
+ctx.fillText("Loading...", canvas.width/2, canvas.height/2);
+
+// --- Platform creation ---
 function createPlatforms() {
   // First platform directly under player
   platforms.push({
-    x: player.x - 35,  // center under player
-    y: player.y + player.h + 10, // slightly below player
+    x: player.x - 35,  
+    y: player.y + player.h + 10, 
     w: 70,
     h: 15,
     broken: false
   });
 
-  // Rest of the platforms
+  // Remaining platforms
   for(let i = 1; i < platformCount; i++){
     platforms.push({
       x: Math.random()*(canvas.width-70),
-      y: player.y + player.h + 10 - i*75,  // spacing above the first platform
+      y: player.y + player.h + 10 - i*75,  
       w: 70,
       h: 15,
       broken: false
@@ -69,7 +95,7 @@ function spawnPlatform(y){
   });
 }
 
-// Game loop
+// --- Game loop ---
 function update(){
   if(!gameStarted) return drawStartScreen();
   if(gameOver) return drawGameOver();
@@ -91,7 +117,7 @@ function update(){
       player.y = p.y - player.h;
       player.onGround = true;
 
-      // Chance to break
+      // Chance to break platform
       if(!p.broken && Math.random()<0.2){
         p.broken = true;
       }
@@ -105,7 +131,7 @@ function update(){
     platforms.forEach(p => p.y += dy);
     score += Math.floor(dy);
 
-    // Remove offscreen platforms
+    // Remove offscreen
     platforms = platforms.filter(p => p.y < canvas.height);
 
     // Spawn new platforms to maintain count
@@ -121,7 +147,7 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// Draw everything
+// --- Draw ---
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -145,7 +171,7 @@ function draw(){
   ctx.fillText('Score: '+score, 10,30);
 }
 
-// Start screen
+// --- Start screen ---
 function drawStartScreen(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='black';
@@ -157,7 +183,7 @@ function drawStartScreen(){
   requestAnimationFrame(update);
 }
 
-// Game over screen
+// --- Game over ---
 function drawGameOver(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='red';
@@ -173,33 +199,6 @@ function drawGameOver(){
 document.addEventListener('keydown', e=>{
   if(e.key==='Enter') gameStarted = true;
 });
-let imagesLoaded = 0;
-const totalImages = 4; // player, platform, broken, jetpack
-
-function imageLoaded(){
-    imagesLoaded++;
-    if(imagesLoaded === totalImages){
-        // All images loaded → start game
-        let imagesLoaded = 0;
-const totalImages = 4; // player, platform, broken, jetpack
-
-function imageLoaded(){
-    imagesLoaded++;
-    if(imagesLoaded === totalImages){
-        // All images loaded → start game
-        
-imageLoaded;
-
-    }
-}
-
-// Assign load event to each image
-playerImg.onload = imageLoaded;
-platformImg.onload = imageLoaded;
-brokenImg.onload = imageLoaded;
-jetpackImg.onload = imageLoaded;
-
-
 </script>
 </body>
 </html>
