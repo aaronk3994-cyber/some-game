@@ -19,8 +19,8 @@ let score = 0;
 let powerJumps = 10;
 let blocksPassed = 0;
 
-// Player slightly bigger for visibility
-const player = { x:200, y:500, w:25, h:25, dy:0, onGround:false, usingJetpack:false };
+// ✅ Smaller player
+const player = { x:200, y:500, w:32, h:32, dy:0, onGround:false, usingJetpack:false };
 
 let platforms = [];
 let jetpacks = [];
@@ -53,7 +53,6 @@ function spawnPlatform(y){
   };
   platforms.push(p);
 
-  // 10% chance to spawn jetpack
   if(Math.random() < 0.1){
     jetpacks.push({
       x: p.x + p.w/2 - 12,
@@ -65,43 +64,42 @@ function spawnPlatform(y){
   }
 }
 
-// --- Draw Doodle Player ---
+// --- Draw Doodle Player (UPDATED) ---
 function drawDoodle(x, y, w, h){
-  // Body (rounded)
-  ctx.fillStyle = '#7CFC00';
+  // Body (dark green)
+  ctx.fillStyle = '#2E7D32';
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 10);
+  ctx.roundRect(x, y, w, h, 8);
   ctx.fill();
 
-  // Eyes
+  // Dot eyes
   ctx.fillStyle = 'black';
   ctx.beginPath();
-  ctx.arc(x + w*0.3, y + h*0.3, 8, 0, Math.PI*2);
-  ctx.arc(x + w*0.7, y + h*0.3, 8, 0, Math.PI*2);
+  ctx.arc(x + w*0.35, y + h*0.35, 2.5, 0, Math.PI*2);
+  ctx.arc(x + w*0.65, y + h*0.35, 2.5, 0, Math.PI*2);
   ctx.fill();
 
-  // Pupils
-  ctx.fillStyle = 'red';
+  // Oval mouth
   ctx.beginPath();
-  ctx.arc(x + w*0.3, y + h*0.32, 4, 0, Math.PI*2);
-  ctx.arc(x + w*0.7, y + h*0.32, 4, 0, Math.PI*2);
+  ctx.ellipse(
+    x + w/2,
+    y + h*0.6,
+    5,
+    3,
+    0,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
-
-  // Mouth
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(x + w/2, y + h*0.6, 8, 0, Math.PI);
-  ctx.stroke();
 
   // Feet
-  ctx.fillStyle = '#2E8B57';
-  ctx.fillRect(x + 6, y + h - 5, 10, 6);
-  ctx.fillRect(x + w - 16, y + h - 5, 10, 6);
+  ctx.fillStyle = '#1B5E20';
+  ctx.fillRect(x + 4, y + h - 4, 6, 4);
+  ctx.fillRect(x + w - 10, y + h - 4, 6, 4);
 
-  // Tiny jetpack on back
+  // Jetpack
   ctx.fillStyle = 'gray';
-  ctx.fillRect(x - 6, y + 10, 6, 20);
+  ctx.fillRect(x - 4, y + 8, 4, 16);
 }
 
 // --- Game loop ---
@@ -142,110 +140,15 @@ function update(){
     }
   }
 
-  // Jetpack pickup = huge boost
   jetpacks.forEach(j => {
     if(!j.active) return;
     if(player.x < j.x + j.w &&
        player.x + player.w > j.x &&
        player.y < j.y + j.h &&
        player.y + player.h > j.y){
-      player.dy = -35; // mega boost
+      player.dy = -35;
       j.active = false;
     }
   });
 
   if(player.y < 200){
-    let dy = 200 - player.y;
-    player.y = 200;
-
-    platforms.forEach(p => p.y += dy);
-    jetpacks.forEach(j => j.y += dy);
-
-    score += Math.floor(dy);
-    blocksPassed += dy;
-
-    platforms = platforms.filter(p => p.y < canvas.height);
-    jetpacks = jetpacks.filter(j => j.y < canvas.height && j.active);
-
-    while(platforms.length < platformCount){
-      spawnPlatform(-Math.random()*100);
-    }
-  }
-
-  if(player.y > canvas.height) gameOver = true;
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-// --- Draw ---
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  platforms.forEach(p=>{
-    ctx.fillStyle = '#228B22';
-    ctx.fillRect(p.x, p.y, p.w, p.h);
-  });
-
-  jetpacks.forEach(j=>{
-    if(!j.active) return;
-    ctx.fillStyle = 'purple';
-    ctx.fillRect(j.x, j.y, j.w, j.h);
-  });
-
-  drawDoodle(player.x, player.y, player.w, player.h);
-
-  // Jet flame when moving upward
-  if(player.dy < 0){
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
-    ctx.moveTo(player.x + player.w/2 - 5, player.y + player.h);
-    ctx.lineTo(player.x + player.w/2 + 5, player.y + player.h);
-    ctx.lineTo(player.x + player.w/2, player.y + player.h + 15);
-    ctx.fill();
-  }
-
-  ctx.fillStyle='black';
-  ctx.font='20px Arial';
-  ctx.fillText('Score: '+score, 10,30);
-}
-
-// --- Screens ---
-function drawStartScreen(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='white';
-  ctx.font='40px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Doodle Jump Jetpack', canvas.width/2, 250);
-  ctx.font='20px Arial';
-  ctx.fillText('Press Enter to Start', canvas.width/2, 300);
-  requestAnimationFrame(update);
-}
-
-function drawGameOver(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='red';
-  ctx.font='40px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Game Over', canvas.width/2, 300);
-}
-
-// --- Input ---
-document.addEventListener('keydown', e=>{
-  if(e.key==='Enter') gameStarted = true;
-  if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
-  if(e.key==='ArrowRight' || e.key==='d') keys.right = true;
-  if(e.key===' ') keys.jet = true;
-});
-
-document.addEventListener('keyup', e=>{
-  if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
-  if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
-  if(e.key===' ') keys.jet = false;
-});
-
-createPlatforms();
-update();
-</script>
-</body>
-</html>
