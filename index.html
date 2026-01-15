@@ -66,14 +66,14 @@ function spawnPlatform(y){
 
 // --- Draw Doodle Player (UPDATED) ---
 function drawDoodle(x, y, w, h){
-  // Body (dark green)
+  // Body (black)
   ctx.fillStyle = '#2E7D32';
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 8);
   ctx.fill();
 
   // Dot eyes
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = 'dark green';
   ctx.beginPath();
   ctx.arc(x + w*0.35, y + h*0.35, 2.5, 0, Math.PI*2);
   ctx.arc(x + w*0.65, y + h*0.35, 2.5, 0, Math.PI*2);
