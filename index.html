@@ -17,52 +17,13 @@ let gameStarted = false;
 let gameOver = false;
 let score = 0;
 
-// Load images
-const playerImg = new Image();
-playerImg.src = 'images/player.png';
-
-const platformImg = new Image();
-platformImg.src = 'images/platform.png';
-
-const brokenImg = new Image();
-brokenImg.src = 'images/broken.png';
-
-const jetpackImg = new Image();
-jetpackImg.src = 'images/jetpack.png';
-
-// Player starts above the first platform
+// Player starts above first platform
 const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false };
 
 // Platforms
 let platforms = [];
 const platformCount = 8;
 
-// --- Image loading logic ---
-let imagesLoaded = 0;
-const totalImages = 4;
-
-function imageLoaded(){
-    imagesLoaded++;
-    if(imagesLoaded === totalImages){
-        // All images loaded → start the game
-        createPlatforms();
-        update();
-    }
-}
-
-// Attach load events
-playerImg.onload = imageLoaded;
-platformImg.onload = imageLoaded;
-brokenImg.onload = imageLoaded;
-jetpackImg.onload = imageLoaded;
-
-// Optional: show loading text while images load
-ctx.fillStyle = "black";
-ctx.font = "30px Arial";
-ctx.textAlign = "center";
-ctx.fillText("Loading...", canvas.width/2, canvas.height/2);
-
-// --- Platform creation ---
 function createPlatforms() {
   // First platform directly under player
   platforms.push({
@@ -151,54 +112,11 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Platforms
+  // Draw platforms
   platforms.forEach(p=>{
-    if(p.broken) ctx.drawImage(brokenImg, p.x, p.y, p.w, p.h);
-    else ctx.drawImage(platformImg, p.x, p.y, p.w, p.h);
-  });
-
-  // Player
-  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-
-  // Jetpack effect
-  if(!player.onGround){
-    ctx.drawImage(jetpackImg, player.x+player.w/4, player.y+player.h, player.w/2, 15);
-  }
-
-  // Score
-  ctx.fillStyle='black';
-  ctx.font='20px Arial';
-  ctx.fillText('Score: '+score, 10,30);
-}
-
-// --- Start screen ---
-function drawStartScreen(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='black';
-  ctx.font='40px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Auto Jump Doodle', canvas.width/2, 200);
-  ctx.font='20px Arial';
-  ctx.fillText('Press Enter to Start', canvas.width/2, 300);
-  requestAnimationFrame(update);
-}
-
-// --- Game over ---
-function drawGameOver(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='red';
-  ctx.font='40px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Game Over', canvas.width/2, 250);
-  ctx.font='20px Arial';
-  ctx.fillText('Score: '+score, canvas.width/2, 300);
-  ctx.fillText('Refresh to Play Again', canvas.width/2, 350);
-}
-
-// Start the game when pressing Enter
-document.addEventListener('keydown', e=>{
-  if(e.key==='Enter') gameStarted = true;
-});
-</script>
-</body>
-</html>
+    if(p.broken){
+      ctx.fillStyle = '#8B0000'; // dark red for broken
+    } else {
+      ctx.fillStyle = '#228B22'; // green
+    }
+    ctx.fillRect(p
