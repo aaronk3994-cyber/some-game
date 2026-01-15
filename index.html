@@ -173,9 +173,25 @@ function drawGameOver(){
 document.addEventListener('keydown', e=>{
   if(e.key==='Enter') gameStarted = true;
 });
+let imagesLoaded = 0;
+const totalImages = 4; // player, platform, broken, jetpack
 
-createPlatforms();
-update();
+function imageLoaded(){
+    imagesLoaded++;
+    if(imagesLoaded === totalImages){
+        // All images loaded → start game
+        createPlatforms();
+        update();
+    }
+}
+
+// Assign load event to each image
+playerImg.onload = imageLoaded;
+platformImg.onload = imageLoaded;
+brokenImg.onload = imageLoaded;
+jetpackImg.onload = imageLoaded;
+
+
 </script>
 </body>
 </html>
