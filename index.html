@@ -24,8 +24,10 @@ const player = { x:200, y:500, w:40, h:40, dy:0, onGround:false };
 let platforms = [];
 const platformCount = 8;
 
+// Key tracking for movement
+const keys = { left:false, right:false };
+
 function createPlatforms() {
-  // First platform directly under player
   platforms.push({
     x: player.x - 35,  
     y: player.y + player.h + 10, 
@@ -33,8 +35,6 @@ function createPlatforms() {
     h: 15,
     broken: false
   });
-
-  // Remaining platforms
   for(let i = 1; i < platformCount; i++){
     platforms.push({
       x: Math.random()*(canvas.width-70),
@@ -61,13 +61,23 @@ function update(){
   if(!gameStarted) return drawStartScreen();
   if(gameOver) return drawGameOver();
 
-  // Auto jump
   const jumpStrength = 15;
+  const playerSpeed = 5;
+
+  // Auto jump
   if(player.onGround) player.dy = -jumpStrength;
 
   // Gravity
   player.dy += 0.8;
   player.y += player.dy;
+
+  // Horizontal movement
+  if(keys.left) player.x -= playerSpeed;
+  if(keys.right) player.x += playerSpeed;
+
+  // Optional: screen wrap
+  if(player.x + player.w < 0) player.x = canvas.width;
+  if(player.x > canvas.width) player.x = -player.w;
 
   // Collision with platforms
   player.onGround = false;
@@ -78,7 +88,6 @@ function update(){
       player.y = p.y - player.h;
       player.onGround = true;
 
-      // Chance to break platform
       if(!p.broken && Math.random()<0.2){
         p.broken = true;
       }
@@ -92,16 +101,13 @@ function update(){
     platforms.forEach(p => p.y += dy);
     score += Math.floor(dy);
 
-    // Remove offscreen
     platforms = platforms.filter(p => p.y < canvas.height);
 
-    // Spawn new platforms to maintain count
     while(platforms.length < platformCount){
       spawnPlatform(-Math.random()*100);
     }
   }
 
-  // Game over
   if(player.y > canvas.height) gameOver = true;
 
   draw();
@@ -112,21 +118,14 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Draw platforms
   platforms.forEach(p=>{
-    if(p.broken){
-      ctx.fillStyle = '#8B0000'; // dark red for broken
-    } else {
-      ctx.fillStyle = '#228B22'; // green
-    }
+    ctx.fillStyle = p.broken ? '#8B0000' : '#228B22';
     ctx.fillRect(p.x, p.y, p.w, p.h);
   });
 
-  // Draw player
   ctx.fillStyle = 'orange';
   ctx.fillRect(player.x, player.y, player.w, player.h);
 
-  // Jetpack effect
   if(!player.onGround){
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
@@ -136,7 +135,6 @@ function draw(){
     ctx.fill();
   }
 
-  // Draw score
   ctx.fillStyle='black';
   ctx.font='20px Arial';
   ctx.fillText('Score: '+score, 10,30);
@@ -145,10 +143,10 @@ function draw(){
 // --- Start screen ---
 function drawStartScreen(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#87CEEB"; // background
+  ctx.fillStyle = "#87CEEB";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle='white'; // text color
+  ctx.fillStyle='white';
   ctx.font='40px Arial';
   ctx.textAlign='center';
   ctx.fillText('Auto Jump Doodle', canvas.width/2, 200);
@@ -171,9 +169,16 @@ function drawGameOver(){
   ctx.fillText('Refresh to Play Again', canvas.width/2, 350);
 }
 
-// Start the game when pressing Enter
+// --- Input ---
 document.addEventListener('keydown', e=>{
   if(e.key==='Enter') gameStarted = true;
+  if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
+  if(e.key==='ArrowRight' || e.key==='d') keys.right = true;
+});
+
+document.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
+  if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
 });
 
 createPlatforms();
