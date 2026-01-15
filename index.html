@@ -16,17 +16,19 @@ const ctx = canvas.getContext('2d');
 let gameStarted = false;
 let gameOver = false;
 let score = 0;
-let powerJumps = 5; // limited jetpack boosts
+let powerJumps = 5; 
 let blocksPassed = 0;
 
 // --- Player setup ---
 const player = { 
   x: 200, 
   y: 500, 
-  w: 35,  // smaller width
-  h: 35,  // smaller height
+  w: 35,  
+  h: 35,  
   dy: 0, 
-  onGround: false 
+  onGround: false,
+  jetActive: false,
+  jetTime: 0
 };
 
 let platforms = [];
@@ -36,35 +38,50 @@ const keys = { left:false, right:false, jet:false };
 
 // --- Platforms ---
 function createPlatforms() {
-  platforms.push({ x: player.x - 25, y: player.y + player.h + 10, w: 70, h: 15 });
+  platforms.push({ x: player.x - 25, y: player.y + player.h + 10, w: 70, h: 15, type: 'normal', dir: 1 });
   for(let i = 1; i < platformCount; i++){
     spawnPlatform(player.y + player.h + 10 - i*75);
   }
 }
 
 function spawnPlatform(y){
-  const p = { x: Math.random()*(canvas.width-70), y: y, w:70, h:15 };
+  const moving = Math.random() < 0.2;
+  const p = { 
+    x: Math.random()*(canvas.width-70), 
+    y: y, 
+    w:70, 
+    h:15, 
+    type: 'normal', 
+    dir: moving ? 1 : 0,
+    speed: moving ? 2 + Math.random()*2 : 0
+  };
   platforms.push(p);
-  if(Math.random() < 0.1){
-    jetpacks.push({ x: p.x + p.w/2 - 12, y: p.y - 30, w: 24, h: 30, active: true });
+
+  if(Math.random() < 0.15){
+    jetpacks.push({ 
+      x: p.x + p.w/2 - 12, 
+      y: p.y - 30, 
+      w: 24, 
+      h: 30, 
+      active: true, 
+      timeLeft: 10000
+    });
   }
 }
 
 // --- Draw player ---
 function drawDoodle(x, y, w, h){
-  ctx.fillStyle = '#006400'; // dark green body
+  ctx.fillStyle = '#006400';
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 8);
   ctx.fill();
 
-  // Eyes
   ctx.fillStyle = 'black';
   ctx.beginPath();
   ctx.arc(x + w*0.3, y + h*0.3, 2, 0, Math.PI*2);
   ctx.arc(x + w*0.7, y + h*0.3, 2, 0, Math.PI*2);
   ctx.fill();
 
-  // Mouth
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -72,65 +89,94 @@ function drawDoodle(x, y, w, h){
   ctx.lineTo(x + w*0.6, y + h*0.65);
   ctx.stroke();
 
-  // Feet
   ctx.fillStyle = '#2E8B57';
   ctx.fillRect(x + 5, y + h - 4, 8, 5);
   ctx.fillRect(x + w - 13, y + h - 4, 8, 5);
 
-  // Jetpack
   ctx.fillStyle = 'gray';
   ctx.fillRect(x - 5, y + 8, 5, 15);
 }
 
 // --- Game loop ---
-function update(){
+let lastTime = performance.now();
+
+function update(time = performance.now()){
   if(!gameStarted) return drawStartScreen();
   if(gameOver) return drawGameOver();
 
-  const jumpStrength = 15;
+  const delta = time - lastTime;
+  lastTime = time;
+
+  const bounceJump = 25; // higher bounce for longer air time
   const playerSpeed = 5;
   const megaJetBoost = 35;
+  const gravity = 0.5; // reduced gravity for slower fall
 
-  if(player.onGround && !keys.jet) player.dy = -jumpStrength;
-
-  // Mega jetpack boost
-  if(keys.jet && powerJumps > 0){
-    player.dy = -megaJetBoost;
-    powerJumps--;
-    keys.jet = false; // single boost per press
+  // Normal bounce jump
+  if(player.onGround && !keys.jet && !player.jetActive){
+    player.dy = -bounceJump;
   }
 
-  player.dy += 0.8; // gravity
+  // Mega jetpack boost (spacebar) only if powerJumps > 0
+  if(keys.jet && powerJumps > 0){
+    player.dy = -megaJetBoost;
+    keys.jet = false;
+    powerJumps--;
+  }
+
+  // Jetpack block boost (10 sec)
+  if(player.jetActive){
+    player.dy = -10;
+    player.jetTime -= delta;
+    if(player.jetTime <= 0) player.jetActive = false;
+  }
+
+  // Gravity
+  player.dy += gravity;
   player.y += player.dy;
 
-  if(keys.left) player.x -= playerSpeed;
-  if(keys.right) player.x += playerSpeed;
-
+  // Horizontal movement
+  if(keys.left){
+    player.x -= playerSpeed;
+    if(!player.onGround) player.dy -= 0.3; // small lift while moving
+  }
+  if(keys.right){
+    player.x += playerSpeed;
+    if(!player.onGround) player.dy -= 0.3; 
+  }
   if(player.x + player.w < 0) player.x = canvas.width;
   if(player.x > canvas.width) player.x = -player.w;
 
   player.onGround = false;
-  for(let p of platforms){
+
+  // Platform collision
+  platforms.forEach(p=>{
     if(player.x + player.w > p.x && player.x < p.x + p.w &&
        player.y + player.h > p.y && player.y + player.h < p.y + p.h + player.dy){
-      player.dy = 0;
+      player.dy = -bounceJump; 
       player.y = p.y - player.h;
       player.onGround = true;
     }
-  }
 
-  // Jetpack pickups refill boosts
+    // Moving platforms
+    if(p.dir !== 0){
+      p.x += p.speed * p.dir;
+      if(p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+    }
+  });
+
+  // Jetpack blocks
   jetpacks.forEach(j=>{
     if(!j.active) return;
     if(player.x < j.x + j.w && player.x + player.w > j.x &&
        player.y < j.y + j.h && player.y + player.h > j.y){
       j.active = false;
-      powerJumps = 5;
-      player.dy = -20; // small boost
+      player.jetActive = true;
+      player.jetTime = j.timeLeft;
     }
   });
 
-  // Scroll when high
+  // Scroll when player high
   if(player.y < 200){
     let dy = 200 - player.y;
     player.y = 200;
@@ -148,7 +194,7 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// --- Draw everything ---
+// --- Draw ---
 function draw(){
   ctx.fillStyle = 'white';
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -178,7 +224,8 @@ function draw(){
   ctx.fillStyle='black';
   ctx.font='20px Arial';
   ctx.fillText('Score: '+score, 10,30);
-  ctx.fillText('Jetpack: '+powerJumps, 10, 60);
+  ctx.fillText('Mega Boosts Left: '+powerJumps, 10, 60);
+  ctx.fillText('Jetpack Active: '+(player.jetActive ? 'Yes' : 'No'), 10, 90);
 }
 
 // --- Screens ---
@@ -212,6 +259,7 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('keyup', e=>{
   if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
   if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
+  if(e.key===' ') keys.jet = false;
 });
 
 createPlatforms();
