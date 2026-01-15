@@ -38,7 +38,18 @@ const keys = { left:false, right:false, jet:false };
 
 // --- Platforms ---
 function createPlatforms() {
-  platforms.push({ x: player.x - 25, y: player.y + player.h + 10, w: 70, h: 15, type: 'normal', dir: 1 });
+  // First platform directly under player
+  platforms.push({ 
+    x: player.x - 35,            // center under player
+    y: player.y + player.h,      // right under feet
+    w: 70, 
+    h: 15, 
+    type: 'normal', 
+    dir: 0, 
+    speed: 0
+  });
+
+  // Create rest of platforms above
   for(let i = 1; i < platformCount; i++){
     spawnPlatform(player.y + player.h + 10 - i*75);
   }
@@ -107,10 +118,10 @@ function update(time = performance.now()){
   const delta = time - lastTime;
   lastTime = time;
 
-  const bounceJump = 25; // higher bounce for longer air time
+  const bounceJump = 25; 
   const playerSpeed = 5;
   const megaJetBoost = 35;
-  const gravity = 0.5; // reduced gravity for slower fall
+  const gravity = 0.5; 
 
   // Normal bounce jump
   if(player.onGround && !keys.jet && !player.jetActive){
@@ -138,7 +149,7 @@ function update(time = performance.now()){
   // Horizontal movement
   if(keys.left){
     player.x -= playerSpeed;
-    if(!player.onGround) player.dy -= 0.3; // small lift while moving
+    if(!player.onGround) player.dy -= 0.3; 
   }
   if(keys.right){
     player.x += playerSpeed;
