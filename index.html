@@ -20,7 +20,7 @@ let powerJumps = 10;
 let blocksPassed = 0;
 
 // Player slightly bigger for visibility
-const player = { x:200, y:500, w:50, h:50, dy:0, onGround:false, usingJetpack:false };
+const player = { x:200, y:500, w:25, h:25, dy:0, onGround:false, usingJetpack:false };
 
 let platforms = [];
 let jetpacks = [];
@@ -74,14 +74,14 @@ function drawDoodle(x, y, w, h){
   ctx.fill();
 
   // Eyes
-  ctx.fillStyle = 'white';
+  ctx.fillStyle = 'black';
   ctx.beginPath();
   ctx.arc(x + w*0.3, y + h*0.3, 8, 0, Math.PI*2);
   ctx.arc(x + w*0.7, y + h*0.3, 8, 0, Math.PI*2);
   ctx.fill();
 
   // Pupils
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = 'red';
   ctx.beginPath();
   ctx.arc(x + w*0.3, y + h*0.32, 4, 0, Math.PI*2);
   ctx.arc(x + w*0.7, y + h*0.32, 4, 0, Math.PI*2);
