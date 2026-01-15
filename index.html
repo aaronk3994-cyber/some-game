@@ -17,7 +17,6 @@ let gameStarted = false;
 let gameOver = false;
 let score = 0;
 let powerJumps = 10;
-let blocksPassed = 0;
 
 // ✅ Smaller player
 const player = { x:200, y:500, w:32, h:32, dy:0, onGround:false, usingJetpack:false };
@@ -30,12 +29,14 @@ const keys = { left:false, right:false, jet:false };
 
 // --- Create platforms ---
 function createPlatforms() {
+  platforms = [];
+  jetpacks = [];
+
   platforms.push({
     x: player.x - 35,
     y: player.y + player.h + 10,
     w: 70,
-    h: 15,
-    broken: false
+    h: 15
   });
 
   for(let i = 1; i < platformCount; i++){
@@ -48,8 +49,7 @@ function spawnPlatform(y){
     x: Math.random()*(canvas.width-70),
     y: y,
     w:70,
-    h:15,
-    broken:false
+    h:15
   };
   platforms.push(p);
 
@@ -64,9 +64,9 @@ function spawnPlatform(y){
   }
 }
 
-// --- Draw Doodle Player (UPDATED) ---
+// --- Draw Doodle Player ---
 function drawDoodle(x, y, w, h){
-  // Body (dark green)
+  // Body
   ctx.fillStyle = '#2E7D32';
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 8);
@@ -81,15 +81,7 @@ function drawDoodle(x, y, w, h){
 
   // Oval mouth
   ctx.beginPath();
-  ctx.ellipse(
-    x + w/2,
-    y + h*0.6,
-    5,
-    3,
-    0,
-    0,
-    Math.PI * 2
-  );
+  ctx.ellipse(x + w/2, y + h*0.6, 5, 3, 0, 0, Math.PI*2);
   ctx.fill();
 
   // Feet
@@ -102,17 +94,26 @@ function drawDoodle(x, y, w, h){
   ctx.fillRect(x - 4, y + 8, 4, 16);
 }
 
-// --- Game loop ---
+// --- Game Loop ---
 function update(){
-  if(!gameStarted) return drawStartScreen();
-  if(gameOver) return drawGameOver();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!gameStarted){
+    drawStartScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if(gameOver){
+    drawGameOver();
+    return;
+  }
 
   const jumpStrength = 15;
   const playerSpeed = 5;
-  const jetStrength = 18;
 
   if(keys.jet && powerJumps > 0 && !player.usingJetpack){
-    player.dy = -jetStrength;
+    player.dy = -18;
     powerJumps--;
     player.usingJetpack = true;
   }
@@ -130,17 +131,19 @@ function update(){
   if(player.x > canvas.width) player.x = -player.w;
 
   player.onGround = false;
-  for(let p of platforms){
-    if(player.x + player.w > p.x && player.x < p.x + p.w &&
-       player.y + player.h > p.y && player.y + player.h < p.y + p.h + player.dy){
+  platforms.forEach(p=>{
+    if(player.x + player.w > p.x &&
+       player.x < p.x + p.w &&
+       player.y + player.h > p.y &&
+       player.y + player.h < p.y + p.h + player.dy){
       player.dy = 0;
       player.y = p.y - player.h;
       player.onGround = true;
       player.usingJetpack = false;
     }
-  }
+  });
 
-  jetpacks.forEach(j => {
+  jetpacks.forEach(j=>{
     if(!j.active) return;
     if(player.x < j.x + j.w &&
        player.x + player.w > j.x &&
@@ -152,3 +155,98 @@ function update(){
   });
 
   if(player.y < 200){
+    let dy = 200 - player.y;
+    player.y = 200;
+    platforms.forEach(p=>p.y += dy);
+    jetpacks.forEach(j=>j.y += dy);
+    score += Math.floor(dy);
+
+    platforms = platforms.filter(p=>p.y < canvas.height);
+    jetpacks = jetpacks.filter(j=>j.y < canvas.height && j.active);
+
+    while(platforms.length < platformCount){
+      spawnPlatform(-Math.random()*100);
+    }
+  }
+
+  if(player.y > canvas.height) gameOver = true;
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+// --- Draw ---
+function draw(){
+  platforms.forEach(p=>{
+    ctx.fillStyle = '#228B22';
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+
+  jetpacks.forEach(j=>{
+    if(j.active){
+      ctx.fillStyle = 'purple';
+      ctx.fillRect(j.x, j.y, j.w, j.h);
+    }
+  });
+
+  drawDoodle(player.x, player.y, player.w, player.h);
+
+  if(player.dy < 0){
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.moveTo(player.x + player.w/2 - 4, player.y + player.h);
+    ctx.lineTo(player.x + player.w/2 + 4, player.y + player.h);
+    ctx.lineTo(player.x + player.w/2, player.y + player.h + 12);
+    ctx.fill();
+  }
+
+  ctx.fillStyle='black';
+  ctx.font='20px Arial';
+  ctx.fillText('Score: '+score, 10,30);
+}
+
+// --- Screens ---
+function drawStartScreen(){
+  ctx.fillStyle='white';
+  ctx.font='40px Arial';
+  ctx.textAlign='center';
+  ctx.fillText('Doodle Jump Jetpack', canvas.width/2, 250);
+  ctx.font='20px Arial';
+  ctx.fillText('Press Enter to Start', canvas.width/2, 300);
+}
+
+function drawGameOver(){
+  ctx.fillStyle='red';
+  ctx.font='40px Arial';
+  ctx.textAlign='center';
+  ctx.fillText('Game Over', canvas.width/2, 300);
+}
+
+// --- Input ---
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){
+    gameStarted = true;
+    gameOver = false;
+    score = 0;
+    powerJumps = 10;
+    player.x = 200;
+    player.y = 500;
+    player.dy = 0;
+    createPlatforms();
+  }
+  if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
+  if(e.key==='ArrowRight' || e.key==='d') keys.right = true;
+  if(e.key===' ') keys.jet = true;
+});
+
+document.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
+  if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
+  if(e.key===' ') keys.jet = false;
+});
+
+createPlatforms();
+update();
+</script>
+</body>
+</html>
