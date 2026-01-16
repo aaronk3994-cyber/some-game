@@ -18,7 +18,7 @@ let gameOver = false;
 let score = 0;
 let powerJumps = 10;
 
-// ✅ Smaller player
+// Player
 const player = { x:200, y:500, w:32, h:32, dy:0, onGround:false, usingJetpack:false };
 
 let platforms = [];
@@ -36,7 +36,8 @@ function createPlatforms() {
     x: player.x - 35,
     y: player.y + player.h + 10,
     w: 70,
-    h: 15
+    h: 15,
+    vx: 0
   });
 
   for(let i = 1; i < platformCount; i++){
@@ -45,11 +46,14 @@ function createPlatforms() {
 }
 
 function spawnPlatform(y){
+  const moving = Math.random() < 0.3; // 30% moving platforms
+
   const p = {
     x: Math.random()*(canvas.width-70),
     y: y,
-    w:70,
-    h:15
+    w: 70,
+    h: 15,
+    vx: moving ? (Math.random() < 0.5 ? -1 : 1) * 1.2 : 0
   };
   platforms.push(p);
 
@@ -64,32 +68,27 @@ function spawnPlatform(y){
   }
 }
 
-// --- Draw Doodle Player ---
+// --- Draw Player ---
 function drawDoodle(x, y, w, h){
-  // Body
   ctx.fillStyle = '#2E7D32';
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 8);
   ctx.fill();
 
-  // Dot eyes
   ctx.fillStyle = 'black';
   ctx.beginPath();
   ctx.arc(x + w*0.35, y + h*0.35, 2.5, 0, Math.PI*2);
   ctx.arc(x + w*0.65, y + h*0.35, 2.5, 0, Math.PI*2);
   ctx.fill();
 
-  // Oval mouth
   ctx.beginPath();
   ctx.ellipse(x + w/2, y + h*0.6, 5, 3, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Feet
   ctx.fillStyle = '#1B5E20';
   ctx.fillRect(x + 4, y + h - 4, 6, 4);
   ctx.fillRect(x + w - 10, y + h - 4, 6, 4);
 
-  // Jetpack
   ctx.fillStyle = 'gray';
   ctx.fillRect(x - 4, y + 8, 4, 16);
 }
@@ -109,9 +108,15 @@ function update(){
     return;
   }
 
-  const jumpStrength = 15;
-  const playerSpeed = 5;
+  // Move platforms
+  platforms.forEach(p=>{
+    p.x += p.vx;
+    if(p.x < 0 || p.x + p.w > canvas.width){
+      p.vx *= -1;
+    }
+  });
 
+  // Physics
   if(keys.jet && powerJumps > 0 && !player.usingJetpack){
     player.dy = -18;
     powerJumps--;
@@ -119,13 +124,13 @@ function update(){
   }
 
   if(player.onGround && !player.usingJetpack)
-    player.dy = -jumpStrength;
+    player.dy = -15;
 
   player.dy += 0.8;
   player.y += player.dy;
 
-  if(keys.left) player.x -= playerSpeed;
-  if(keys.right) player.x += playerSpeed;
+  if(keys.left) player.x -= 5;
+  if(keys.right) player.x += 5;
 
   if(player.x + player.w < 0) player.x = canvas.width;
   if(player.x > canvas.width) player.x = -player.w;
@@ -140,6 +145,7 @@ function update(){
       player.y = p.y - player.h;
       player.onGround = true;
       player.usingJetpack = false;
+      player.x += p.vx; // move with platform
     }
   });
 
@@ -178,7 +184,7 @@ function update(){
 // --- Draw ---
 function draw(){
   platforms.forEach(p=>{
-    ctx.fillStyle = '#228B22';
+    ctx.fillStyle = p.vx !== 0 ? '#6A5ACD' : '#228B22';
     ctx.fillRect(p.x, p.y, p.w, p.h);
   });
 
